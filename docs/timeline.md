@@ -1,0 +1,1 @@
+Nov 23 2026 | lunnaboo: Created the project's repo. I'm currently trying to figure out where to start and how to plan this project. My teammate Thalles is helping me out with planning but we are still unsure about how to split this project into tasks. I need to define the necessary modules first, there is no way we'll be coding this blindly. We'll see how it goes.
