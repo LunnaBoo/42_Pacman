@@ -63,20 +63,24 @@ class ConfigParser:
     @classmethod
     def from_file(cls, path: str) -> "ConfigParser":
         """Load a JSON configuration file and handle loading errors."""
+        if not path.lower().endswith(".json"):
+            raise ValueError("Expected a JSON file.")
         try:
             with open(path, encoding="utf-8") as file:
                 cleaned = "".join(
                     "\n" if line.lstrip().startswith(("#", "//"))
                     else line
-                    for line in file
-                )
+                    for line in file)
 
             data = json.loads(cleaned)
 
-        except (OSError, ValueError, RecursionError) as error:
-            cls._warn(
-                f"Config load failed ({error}), using full defaults"
-            )
+        except OSError as error:
+            raise ValueError(f"Cannot open configuration file: {error}"
+                             ) from error
+
+        except (ValueError, RecursionError) as error:
+            cls._warn(f"Invalid configuration content ({error}), "
+                      f"using defaults")
             data = {}
 
         return cls(data)
@@ -98,8 +102,7 @@ class ConfigParser:
 
         if isinstance(value, bool) or not isinstance(value, int):
             cls._warn(
-                f"'{name}' missing or not an int, using {default}"
-            )
+                f"'{name}' missing or not an int, using {default}")
             return default
 
         if not low <= value <= high:
@@ -107,8 +110,7 @@ class ConfigParser:
 
             cls._warn(
                 f"'{name}' out of bounds [{low}, {high}], "
-                f"clamped to {clamped}"
-            )
+                f"clamped to {clamped}")
             return clamped
 
         return value
@@ -133,8 +135,7 @@ class ConfigParser:
         for i, item in enumerate(raw):
             if not isinstance(item, dict):
                 cls._warn(
-                    f"Level[{i}] invalid, using default dimensions"
-                )
+                    f"Level[{i}] invalid, using default dimensions")
                 levels.append(cls._default_level())
                 continue
 
@@ -142,18 +143,15 @@ class ConfigParser:
                 key: cls._validate_int(
                     item.get(key),
                     f"levels[{i}].{key}",
-                    limits
-                )
-                for key, limits in cls.LEVEL_RULES.items()
-            })
+                    limits)
+                for key, limits in cls.LEVEL_RULES.items()})
 
         if len(levels) < cls.MIN_LEVELS:
             missing = cls.MIN_LEVELS - len(levels)
 
             cls._warn(
                 f"At least {cls.MIN_LEVELS} levels required, "
-                f"adding {missing} default levels"
-            )
+                f"adding {missing} default levels")
 
             for _ in range(missing):
                 levels.append(cls._default_level())
